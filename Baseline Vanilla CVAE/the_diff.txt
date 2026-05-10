@@ -1,0 +1,510 @@
+Deep Learning Mid U-Net CVAE: Model Structure and Differences
+=============================================================
+
+This file documents the newly created model in:
+
+  C:\Users\user\ALL_develope\공부\deep_learning_mid_unet_cvae
+
+and compares it against the existing model in:
+
+  C:\Users\user\ALL_develope\공부\advancedML_team_I
+
+
+1. New Model Purpose
+--------------------
+
+The new project implements the model expected by "deep learning mid.pdf".
+
+Its goal is not target-stage MRI translation.
+Its goal is same-label MRI reconstruction with classifier guidance:
+
+  Given an input MRI slice and its actual dementia-stage label,
+  reconstruct the MRI so that:
+
+  1. the reconstructed image remains close to the original image,
+  2. the reconstruction is consistent with the given class label according
+     to a frozen classifier,
+  3. the spatial anatomy is preserved through U-Net skip connections.
+
+In short:
+
+  Label-aware reconstruction + U-Net CVAE + classifier-guided loss.
+
+
+2. New Model Architecture
+-------------------------
+
+Main model:
+
+  src/mid_unet_cvae/models.py
+  class MidUNetCVAE
+
+Input:
+
+  x: grayscale MRI slice
+     shape: (B, 1, 224, 224)
+
+  y: class label
+     values:
+       0 = Non Demented
+       1 = Very mild Dementia
+       2 = Mild Dementia
+
+
+2.1 Encoder
+-----------
+
+The encoder has four downsampling convolution blocks:
+
+  enc1: 1   -> 32   channels, 224x224 -> 112x112
+  enc2: 32  -> 64   channels, 112x112 -> 56x56
+  enc3: 64  -> 128  channels, 56x56  -> 28x28
+  enc4: 128 -> 256  channels, 28x28  -> 14x14
+
+The final feature map is flattened and projected to:
+
+  mu
+  logvar
+
+These define the VAE latent distribution.
+
+
+2.2 Latent Space
+----------------
+
+The latent vector is a single vector z:
+
+  latent_dim = 128
+
+There is no explicit split into:
+
+  z_content
+  z_class
+
+This is intentional. The mid-presentation model is simpler than the final
+advancedML_team_I model and does not enforce class/content disentanglement.
+
+
+2.3 Class Conditioning
+----------------------
+
+The class label y is converted to an embedding:
+
+  class_embedding(y)
+
+Default size:
+
+  class_embed_dim = 32
+
+The decoder input is:
+
+  concat(z, class_embedding(y))
+
+The class condition is injected once at the bottleneck.
+
+There is no FiLM module.
+There is no repeated class conditioning inside decoder feature maps.
+
+
+2.4 Decoder
+-----------
+
+The decoder starts from:
+
+  concat(z, class_embedding(y))
+
+This vector is projected back to:
+
+  (B, 256, 14, 14)
+
+Then the decoder upsamples while using skip connections from the encoder:
+
+  decoder stage 1:
+    upsample to 28x28
+    concatenate encoder enc3 feature
+    output 128 channels
+
+  decoder stage 2:
+    upsample to 56x56
+    concatenate encoder enc2 feature
+    output 64 channels
+
+  decoder stage 3:
+    upsample to 112x112
+    concatenate encoder enc1 feature
+    output 32 channels
+
+  final stage:
+    upsample to 224x224
+    output 1-channel grayscale image through Sigmoid
+
+Output:
+
+  reconstructed MRI slice
+  shape: (B, 1, 224, 224)
+  value range: [0, 1]
+
+
+2.5 Frozen Classifier
+---------------------
+
+The new project includes a lightweight classifier:
+
+  src/mid_unet_cvae/models.py
+  class SmallMRIClassifier
+
+The classifier is trained first using:
+
+  scripts/train_classifier.py
+
+Then it is frozen and used during CVAE training:
+
+  scripts/train_cvae.py
+
+The classifier receives reconstructed images and predicts the dementia-stage
+class. Its cross-entropy loss encourages reconstructions to remain consistent
+with the input label.
+
+
+2.6 Training Loss
+-----------------
+
+The new model uses:
+
+  L = L_reconstruction + beta * L_KL + lambda_cls * L_classifier
+
+Where:
+
+  L_reconstruction:
+    binary cross entropy between reconstruction and original MRI
+
+  L_KL:
+    standard VAE KL divergence
+
+  L_classifier:
+    cross entropy from the frozen classifier on the reconstructed MRI
+
+The new model does not use:
+
+  LPIPS
+  center loss
+  separation loss
+  latent clustering loss
+  FiLM regularization
+  target-stage translation loss
+
+
+3. Existing advancedML_team_I Model Summary
+-------------------------------------------
+
+The existing project in advancedML_team_I is a more advanced final-version
+model.
+
+Its main model is:
+
+  C:\Users\user\ALL_develope\공부\advancedML_team_I\cvae.py
+  class ImprovedCVAE
+
+That model is closer to:
+
+  Classifier-guided Disentangled Conditional VAE
+  for anatomy-preserving dementia stage generation.
+
+Its goal is harder than the new mid model:
+
+  Given an MRI from one patient, generate an MRI that preserves the patient's
+  anatomy while changing the output toward a target dementia stage.
+
+In short:
+
+  Anatomy-preserving target-stage generation + disentanglement + FiLM.
+
+
+4. Key Differences
+------------------
+
+4.1 Research Goal
+-----------------
+
+New deep_learning_mid_unet_cvae:
+
+  Same-label reconstruction.
+  The input label and output condition are the same.
+
+Existing advancedML_team_I:
+
+  Target-stage generation.
+  The output can be conditioned on a different target label from the original.
+
+
+4.2 Model Name and Concept
+--------------------------
+
+New deep_learning_mid_unet_cvae:
+
+  Classifier-Guided U-Net CVAE
+
+Existing advancedML_team_I:
+
+  Classifier-guided Disentangled Conditional VAE
+
+
+4.3 Latent Space
+----------------
+
+New deep_learning_mid_unet_cvae:
+
+  Uses one latent vector z.
+  No explicit content/class split.
+
+Existing advancedML_team_I:
+
+  Splits latent vector into:
+
+    z_content
+    z_class_raw
+
+  Intended meaning:
+
+    z_content   = patient anatomy / subject-specific structure
+    z_class_raw = dementia-stage information
+
+
+4.4 Class Conditioning
+----------------------
+
+New deep_learning_mid_unet_cvae:
+
+  Uses class embedding once at the bottleneck:
+
+    concat(z, class_embedding(label))
+
+Existing advancedML_team_I:
+
+  Uses class embedding to replace the class latent part and also uses FiLM
+  inside decoder stages.
+
+  The existing model repeatedly injects class information into decoder feature
+  maps.
+
+
+4.5 FiLM
+--------
+
+New deep_learning_mid_unet_cvae:
+
+  No FiLM.
+
+Existing advancedML_team_I:
+
+  Uses FiLM modules:
+
+    film1
+    film2
+    film3
+
+  These modulate decoder features using class-conditioned scale and shift.
+
+
+4.6 Decoder
+-----------
+
+New deep_learning_mid_unet_cvae:
+
+  U-Net decoder with skip connections.
+  Skip connections are used only for anatomy-preserving reconstruction.
+
+Existing advancedML_team_I:
+
+  U-Net decoder with skip connections.
+  Skip connections preserve anatomy, while FiLM and target class embedding
+  support stage-controlled generation.
+
+
+4.7 Loss Function
+-----------------
+
+New deep_learning_mid_unet_cvae:
+
+  Uses:
+
+    BCE reconstruction loss
+    KL divergence
+    frozen classifier cross entropy loss
+
+Existing advancedML_team_I:
+
+  Uses:
+
+    BCE reconstruction loss
+    KL divergence
+    LPIPS perceptual loss
+    center loss
+    separation loss
+    frozen classifier cross entropy loss
+
+
+4.8 Disentanglement
+-------------------
+
+New deep_learning_mid_unet_cvae:
+
+  No disentanglement loss.
+  No latent clustering.
+  No class center separation.
+
+Existing advancedML_team_I:
+
+  Uses latent clustering:
+
+    center loss pulls same-class z_class_raw together
+    separation loss pushes different class centers apart
+
+  This is a core part of the final "disentangled" model claim.
+
+
+4.9 LPIPS
+---------
+
+New deep_learning_mid_unet_cvae:
+
+  Does not use LPIPS.
+
+Existing advancedML_team_I:
+
+  Uses LPIPS to encourage perceptual similarity beyond pixel-level BCE.
+
+
+4.10 Classifier
+---------------
+
+New deep_learning_mid_unet_cvae:
+
+  Provides a lightweight local classifier implementation:
+
+    SmallMRIClassifier
+
+  This avoids requiring timm or a pretrained ResNet download.
+  It is easier to run on any computer after installing requirements.
+
+Existing advancedML_team_I:
+
+  Uses timm ResNet18 with:
+
+    in_chans = 1
+    num_classes = 3
+
+  This is stronger but adds an external model dependency.
+
+
+4.11 Data Split
+---------------
+
+Both projects use subject-level splitting to reduce leakage.
+
+New deep_learning_mid_unet_cvae:
+
+  Implements subject-stratified split in:
+
+    src/mid_unet_cvae/data.py
+
+Existing advancedML_team_I:
+
+  Implements subject split in classifier.py and cvae.py.
+
+
+4.12 Evaluation Focus
+---------------------
+
+New deep_learning_mid_unet_cvae:
+
+  Focuses on mid-presentation metrics:
+
+    MSE
+    PSNR
+    SSIM
+    target class confidence
+    classifier accuracy on reconstructions
+    confusion matrix
+
+Existing advancedML_team_I:
+
+  Also includes final-version analyses:
+
+    latent visualization
+    z_content / z_class analysis
+    class center distance
+    disentanglement metrics
+    Grad-CAM for generated target-stage images
+
+
+4.13 Inference Behavior
+-----------------------
+
+New deep_learning_mid_unet_cvae:
+
+  reconstruct.py saves same-label reconstruction pairs:
+
+    original image | reconstruction using original label
+
+  The reconstruction output sampler does not simply save the first N validation
+  images. It randomly selects a balanced number of images from each dementia
+  stage.
+
+  Default output sampling:
+
+    5 Non Demented samples
+    5 Very mild Dementia samples
+    5 Mild Dementia samples
+
+  The number can be changed with:
+
+    --samples-per-stage
+
+  The sampler uses the provided seed for reproducibility and tries to choose
+  different subjects within each stage when possible. This avoids producing all
+  reconstruction examples from the same patient just because adjacent validation
+  images come from the same subject.
+
+Existing advancedML_team_I:
+
+  generate_conditional_image and save_comparison support:
+
+    original label -> target label
+
+  This is closer to stage conversion.
+
+
+5. Why the New Model Was Built This Way
+---------------------------------------
+
+The analysis document says that "deep learning mid.pdf" is simpler than the
+final advancedML_team_I implementation.
+
+The mid PDF emphasizes:
+
+  Vanilla CVAE baseline
+  U-Net structure
+  classifier-guided loss
+  reconstruction quality
+  stage consistency
+  Grad-CAM / qualitative explainability
+
+It does not strongly specify:
+
+  FiLM-conditioned decoder
+  latent class/content split
+  center loss
+  separation loss
+  LPIPS
+  target-stage translation
+
+Therefore the new model intentionally removes those final-version components.
+
+
+6. One-Line Summary
+-------------------
+
+The new model is a mid-presentation U-Net CVAE for label-aware reconstruction,
+while advancedML_team_I is a more complex final-version model for
+anatomy-preserving target-stage dementia generation.
