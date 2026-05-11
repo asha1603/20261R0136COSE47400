@@ -1,6 +1,6 @@
 # Deep Learning Mid: Classifier-Guided U-Net CVAE
 
-This repository implements the model described by `deep learning mid.pdf` as a reproducible project.
+This folder implements the model described by `deep learning mid.pdf` as a reproducible project.
 
 The target is the mid-presentation version, not the later final-paper version:
 
@@ -15,7 +15,7 @@ The target is the mid-presentation version, not the later final-paper version:
 ## Project Structure
 
 ```text
-deep_learning_mid_unet_cvae/
+unet/
   configs/default.yaml
   scripts/
     train_classifier.py
@@ -30,6 +30,8 @@ deep_learning_mid_unet_cvae/
     models.py
     utils.py
 ```
+
+The vanilla CVAE baseline is intentionally separated in `../vanilla`.
 
 ## Setup
 
