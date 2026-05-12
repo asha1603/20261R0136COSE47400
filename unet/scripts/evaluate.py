@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -12,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from mid_unet_cvae.data import CLASS_TO_INDEX, MRISliceDataset
-from mid_unet_cvae.losses import normalize_for_classifier
+from mid_unet_cvae.losses import kl_divergence, normalize_for_classifier
 from mid_unet_cvae.metrics import format_confusion_matrix, mse, psnr, ssim, update_confusion_matrix
 from mid_unet_cvae.models import MidUNetCVAE, SmallMRIClassifier
 from mid_unet_cvae.utils import AverageMeter, get_device, load_checkpoint, set_seed
@@ -83,6 +84,8 @@ def main() -> None:
     mse_meter = AverageMeter()
     psnr_meter = AverageMeter()
     ssim_meter = AverageMeter()
+    bce_meter = AverageMeter()
+    kl_meter = AverageMeter()
     confidence_meter = AverageMeter()
     correct = 0
     total = 0
@@ -99,6 +102,11 @@ def main() -> None:
         psnr_meter.update(psnr(recon, images).item(), batch_size)
         ssim_meter.update(ssim(recon, images).item(), batch_size)
 
+        recon_bce = F.binary_cross_entropy(recon, images, reduction="mean")
+        kl = kl_divergence(output["mu"], output["logvar"])
+        bce_meter.update(recon_bce.item(), batch_size)
+        kl_meter.update(kl.item(), batch_size)
+
         if classifier is not None:
             logits = classifier(normalize_for_classifier(recon, args.mean, args.std))
             probs = logits.softmax(dim=1)
@@ -114,6 +122,9 @@ def main() -> None:
     print(f"MSE: {mse_meter.avg:.6f}")
     print(f"PSNR: {psnr_meter.avg:.4f}")
     print(f"SSIM: {ssim_meter.avg:.4f}")
+    print(f"Recon Loss (BCE): {bce_meter.avg:.6f}")
+    print(f"KL Loss: {kl_meter.avg:.6f}")
+    print(f"Val Loss (BCE + KL): {bce_meter.avg + kl_meter.avg:.6f}")
 
     if classifier is not None:
         print(f"Target confidence: {confidence_meter.avg:.4f}")
