@@ -1,0 +1,29 @@
+# Final FiLM-conditioned disentangled CVAE settings from final PPT/report.
+image_size: 224
+num_classes: 3
+latent_dim: 128
+content_dim: 96
+class_dim: 32
+class_embed_dim: 32
+
+loss:
+  lambda_bce: 1.0
+  lambda_lpips: 1.0
+  beta_kl_max: 2.0
+  kl_warmup_epochs: 10  # configurable; paper does not state exact duration
+  w_center: 10.0
+  w_sep: 5.0
+  lambda_cls: 2.0
+  margin: 2.0
+
+training:
+  batch_size: 8
+  epochs: 50
+  lr: 0.0001
+  seed: 42
+  val_ratio: 0.2
+
+classifier:
+  architecture: ResNet18
+  mean: 0.456
+  std: 0.224

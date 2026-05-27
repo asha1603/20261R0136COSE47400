@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.kaggle_download/
+kaggle.json
+*.zip
+checkpoints/**/*.pth
+outputs/*
+!outputs/.gitkeep
+Dataset/**/*.jpg
+Dataset/**/*.jpeg
+Dataset/**/*.png
+Dataset/**/*.bmp
+Dataset/**/*.tif
+Dataset/**/*.tiff
