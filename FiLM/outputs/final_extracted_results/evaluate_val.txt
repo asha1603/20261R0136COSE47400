@@ -1,0 +1,13 @@
+Split: val | Images: 16958
+Same-label reconstruction MSE: 0.000320
+Same-label reconstruction PSNR: 35.0311
+Same-label reconstruction SSIM: 0.9945
+Same-label BCE: 0.325010
+Classifier confidence on reconstructions: 0.8394
+Classifier accuracy on reconstructions: 0.8422
+Mean requested-target confidence across translations: 0.3720
+Reconstruction confusion matrix:
+[12911, 288, 99]
+[1651, 950, 205]
+[299, 134, 421]
+Note: Translation confidence is reported without pixel comparison because OASIS-1 has no paired future-stage target image.

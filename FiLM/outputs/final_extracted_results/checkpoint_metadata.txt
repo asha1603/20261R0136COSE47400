@@ -1,0 +1,34 @@
+
+== checkpoints/final_classifier/best_resnet18_classifier.pth ==
+model_parameters: 11181399
+model_state_keys: 122
+epoch : 8
+val_accuracy : 0.7963792900106145
+image_size : 224
+num_classes : 3
+mean : 0.456
+std : 0.224
+classes : {'Non Demented': 0, 'Very mild Dementia': 1, 'Mild Dementia': 2}
+
+== checkpoints/final_film_cvae/best_final_film_cvae.pth ==
+model_parameters: 20799389
+model_state_keys: 101
+centers_shape: (3, 32)
+centers_l2_norm: [0.7619085907936096, 1.3805090188980103, 1.4181263446807861]
+epoch : 4
+val_loss : 9.236575883547502
+image_size : 224
+latent_dim : 128
+content_dim : 96
+class_dim : 32
+class_embed_dim : 32
+num_classes : 3
+beta_kl_max : 2.0
+kl_warmup_epochs : 10
+lambda_bce : 1.0
+lambda_lpips : 1.0
+w_center : 10.0
+w_sep : 5.0
+lambda_cls : 2.0
+margin : 2.0
+classes : {'Non Demented': 0, 'Very mild Dementia': 1, 'Mild Dementia': 2}
