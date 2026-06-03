@@ -41,6 +41,18 @@ improved_film_cvae_independent/
 
 ---
 
+## Download Dataset from Kaggle
+
+This project expects the dataset to be arranged like this:
+
+```text
+data/
+├── Non Demented/
+├── Very mild Dementia/
+└── Mild Dementia/
+```
+---
+
 ## Expected dataset structure
 
 Put your MRI dataset like this:

@@ -2,8 +2,11 @@ torch
 torchvision
 timm
 numpy
-pillow
-tqdm
+pandas
 scikit-learn
 matplotlib
-pyyaml
+opencv-python
+Pillow
+tqdm
+PyYAML
+kaggle
