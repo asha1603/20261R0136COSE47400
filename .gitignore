@@ -24,3 +24,7 @@ runs/
 
 .DS_Store
 Thumbs.db
+oasis_data/
+*.zip
+Old_FiLM/checkpoints/
+Old_FiLM/classification_results/

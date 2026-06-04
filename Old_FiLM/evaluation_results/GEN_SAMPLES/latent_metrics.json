@@ -1,0 +1,14 @@
+{
+  "intra_class_variance": {
+    "Non Demented": 0.007174569647759199,
+    "Very mild Dementia": 0.008072540163993835,
+    "Mild Dementia": 0.007411669008433819
+  },
+  "pairwise_center_distances": {
+    "Non Demented vs Very mild Dementia": 1.28041672706604,
+    "Non Demented vs Mild Dementia": 1.397289752960205,
+    "Very mild Dementia vs Mild Dementia": 1.452626347541809
+  },
+  "average_center_distance": 1.3767776489257812,
+  "margin": 2.0
+}
