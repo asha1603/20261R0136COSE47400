@@ -422,7 +422,7 @@ def train_improved_cvae(model, train_loader, val_loader,
         scheduler.step()
 
         val_loss = validate(
-            model, val_loader, lambda_recon, beta,
+            model, val_loader, lambda_recon, beta_max,
             clustering_loss_fn, classifier
         )
 
