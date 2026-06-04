@@ -15,5 +15,12 @@ runs/
 *.pt
 *.ckpt
 
+# Old_FiLM checkpoints are reproducible training artifacts needed for evaluation.
+# They are stored through Git LFS according to .gitattributes.
+!Old_FiLM/checkpoints/
+!Old_FiLM/checkpoints/*.pth
+!Old_FiLM/classification_results/
+!Old_FiLM/classification_results/*.pth
+
 .DS_Store
 Thumbs.db

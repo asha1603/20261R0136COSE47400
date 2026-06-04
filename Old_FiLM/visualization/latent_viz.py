@@ -1,3 +1,7 @@
+import os
+import sys
+from pathlib import Path
+
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
@@ -5,20 +9,26 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
-from cvae_exp import (
+# Allow this file to be run directly from the visualization directory.
+OLD_FILM_DIR = Path(__file__).resolve().parents[1]
+if str(OLD_FILM_DIR) not in sys.path:
+    sys.path.insert(0, str(OLD_FILM_DIR))
+
+from cvae import (
     ImprovedCVAE,
     OASISContrastiveDataset,
     transform,
     DEVICE,
     CLASSES,
     LATENT_DIM,
+    DATA_DIR,
+    CVAE_MODEL_PATH,
+    OUTPUT_FOLDER,
 )
 
 # -----------------------------
 # Config
 # -----------------------------
-DATA_DIR = "data"
-CVAE_MODEL_PATH = "best_cvae_clustered_class_only.pth"
 BATCH_SIZE = 32
 NUM_CLASSES = len(CLASSES)
 
@@ -98,8 +108,8 @@ pca = PCA(n_components=2)
 pca_zc = pca.fit_transform(lat_z_content)
 pca_zcls = pca.fit_transform(lat_z_class)
 
-plot_2d(pca_zc, labels, "PCA of z_content", "pca_z_content.png")
-plot_2d(pca_zcls, labels, "PCA of z_class_raw", "pca_z_class.png")
+plot_2d(pca_zc, labels, "PCA of z_content", os.path.join(OUTPUT_FOLDER, "pca_z_content.png"))
+plot_2d(pca_zcls, labels, "PCA of z_class_raw", os.path.join(OUTPUT_FOLDER, "pca_z_class.png"))
 
 # -----------------------------
 # t-SNE
@@ -109,7 +119,7 @@ tsne = TSNE(n_components=2, learning_rate="auto", init="random")
 tsne_zc = tsne.fit_transform(lat_z_content)
 tsne_zcls = tsne.fit_transform(lat_z_class)
 
-plot_2d(tsne_zc, labels, "t-SNE of z_content", "tsne_z_content.png")
-plot_2d(tsne_zcls, labels, "t-SNE of z_class_raw", "tsne_z_class.png")
+plot_2d(tsne_zc, labels, "t-SNE of z_content", os.path.join(OUTPUT_FOLDER, "tsne_z_content.png"))
+plot_2d(tsne_zcls, labels, "t-SNE of z_class_raw", os.path.join(OUTPUT_FOLDER, "tsne_z_class.png"))
 
 print("Done. Saved PCA & t-SNE plots.")

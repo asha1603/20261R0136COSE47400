@@ -14,13 +14,16 @@ from sklearn.metrics import classification_report, confusion_matrix
 import random
 
 # --- 1. 설정 및 하이퍼파라미터 ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-DATA_DIR = 'data'
+DATA_DIR = os.environ.get("OLD_FILM_DATA_DIR", os.path.join(BASE_DIR, "data"))
 IMAGE_SIZE = 224
 BATCH_SIZE = 32
 NUM_EPOCHS = 15
 LEARNING_RATE = 1e-4
-OUTPUT_DIR = 'classification_results'
+OUTPUT_DIR = os.environ.get(
+    "OLD_FILM_CLASSIFIER_DIR", os.path.join(BASE_DIR, "classification_results")
+)
 
 CLASSES = {
     'Non Demented': 0,

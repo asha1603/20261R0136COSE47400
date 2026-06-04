@@ -28,11 +28,29 @@ from scipy.stats import entropy
 
 # --- 1. Configuration & Hyperparameters ---
 
-GPU_ID = 3
-DEVICE = torch.device(f'cuda:{GPU_ID}' if torch.cuda.is_available() else 'cpu')
-
-DATA_DIR = '/home/juhyeong/AML/Data'
-CVAE_MODEL_PATH = "best_cvae_baseline_ablation_hyperparameter.pth" # Distinct name for the baseline model
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DATA_DIR = os.environ.get("OLD_FILM_DATA_DIR", os.path.join(BASE_DIR, "data"))
+CHECKPOINT_DIR = os.environ.get(
+    "OLD_FILM_CHECKPOINT_DIR", os.path.join(BASE_DIR, "checkpoints")
+)
+RESULTS_DIR = os.environ.get(
+    "OLD_FILM_RESULTS_DIR", os.path.join(BASE_DIR, "evaluation_results")
+)
+CLASSIFIER_MODEL_PATH = os.environ.get(
+    "OLD_FILM_CLASSIFIER_PATH",
+    os.path.join(
+        BASE_DIR,
+        "classification_results",
+        "best_classifier_resnet18_weights_42.pth",
+    ),
+)
+CVAE_MODEL_PATH = os.environ.get(
+    "OLD_FILM_BASELINE_MODEL_PATH",
+    os.path.join(CHECKPOINT_DIR, "best_cvae_baseline_ablation_hyperparameter.pth"),
+)
+os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 IMAGE_SIZE = 224
 IMAGE_CHANNEL = 1
@@ -57,7 +75,7 @@ LAMBDA_LPIPS = 2.0
 # Classifier-guided loss (Kept as it is usually part of the semi-supervised baseline)
 CLASSIFIER_LOSS_WEIGHT = 3.0
 
-OUTPUT_FOLDER = "GEN_SAMPLES_BASELINE_HYPERPARAMETER"
+OUTPUT_FOLDER = os.path.join(RESULTS_DIR, "GEN_SAMPLES_BASELINE_HYPERPARAMETER")
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 transform = transforms.Compose([
@@ -85,7 +103,7 @@ class SimpleClassifier(nn.Module):
         return self.model(x)
 
 
-def load_classifier(path="/home/juhyeong/AML/best_classifier_resnet18_weights_42.pth"):
+def load_classifier(path=CLASSIFIER_MODEL_PATH):
     cls = SimpleClassifier(num_classes=NUM_CLASSES).to(DEVICE)
     ckpt = torch.load(path, map_location=DEVICE)
     cls.load_state_dict(ckpt)

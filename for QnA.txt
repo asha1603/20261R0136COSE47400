@@ -1,0 +1,116 @@
+Reason for the input difference:
+The basic idea of a Conditional VAE is that it receives a condition, such as a label.
+In our Vanilla CVAE, the label is given to the encoder as a label map.
+
+For U-Net CVAE, skip connections strongly pass the original anatomy information from the encoder to the decoder.
+Because of this, we do not need to add the label map to the encoder input.
+Instead, we give the label condition at the decoder bottleneck and use skip connections to restore the anatomical structure.
+
+Vanilla CVAE receives the label from the encoder stage,
+but the spatial details still have to be compressed into the bottleneck latent vector.
+This makes reconstruction harder and can reduce performance.
+
+Skip connection difference:
+U-Net directly passes low-level and mid-level anatomical features to the decoder,
+so the reconstruction becomes much sharper.
+
+In U-Net CVAE, encoder features e1, e2, and e3 are saved
+and then concatenated back into the decoder.
+In contrast, Vanilla CVAE has no skip connections,
+so it reconstructs the image directly from the latent vector.
+
+Conditioning difference:
+Vanilla CVAE uses one-hot labels because we only have three classes,
+so one-hot conditioning is simple and sufficient.
+
+U-Net CVAE uses label embedding.
+This means the label is converted into a learnable dense vector.
+The model can learn the label representation itself,
+the decoder can use class-specific information more flexibly,
+and the class condition can be treated like a bottleneck feature.
+
+Decoder difference:
+The decoder is different mainly because of skip connections.
+
+The Vanilla decoder has to reconstruct the image from the latent vector z almost from scratch.
+The U-Net decoder also starts from the latent vector,
+but it concatenates encoder features at multiple decoder stages.
+Therefore, the decoder structure has to be different.
+
+Loss difference:
+Classifier guidance is implemented as classifier-guided loss.
+
+The idea is:
+“Do not only make the reconstructed image similar to the original image,
+but also make it classified as the correct dementia stage by the classifier.”
+
+Final conclusion:
+Our proposed architecture combines U-Net skip connections and classifier-guided loss,
+and this combined design outperforms the Vanilla CVAE baseline.
+
+Metric explanations:
+
+MSE:
+MSE measures how close the reconstructed image is to the original image at the pixel level.
+
+PSNR:
+PSNR measures how little noise exists in the reconstruction.
+Higher PSNR means better image quality.
+
+SSIM:
+SSIM measures how similar the reconstructed image is to the original image
+in terms of brightness, contrast, and structural information.
+
+Recon BCE:
+Reconstruction BCE measures how well the reconstructed pixel distribution
+matches the original image pixel distribution.
+
+KL Loss:
+KL loss is a regularization term.
+It measures how close the VAE latent distribution is to the standard normal distribution.
+
+It should be appropriately low.
+If KL loss is too large, the latent space may become unstable.
+If KL loss is too close to zero, the model may not be using the latent vector enough,
+which can indicate posterior collapse.
+
+Validation Loss:
+Validation loss is calculated as:
+Val Loss = Recon BCE + KL Loss
+
+Confusion matrix:
+The confusion matrix shows which class the classifier predicts
+when it looks at the reconstructed images.
+
+0 = Non-Demented
+1 = Very Mild Dementia
+2 = Mild Dementia
+
+For example, the U-Net confusion matrix is:
+
+[13203, 84, 11]
+[375, 2428, 3]
+[61, 66, 727]
+
+This can be interpreted as:
+
+                 Pred Non   Pred Very Mild   Pred Mild
+Actual Non        13203        84              11
+Actual Very Mild    375      2428               3
+Actual Mild          61        66             727
+
+The diagonal values are the correct predictions.
+Larger diagonal values mean that the classifier sees the reconstructed images
+as the correct dementia stage.
+
+For Vanilla CVAE, the confusion matrix is:
+
+[13298, 0, 0]
+[2806, 0, 0]
+[854, 0, 0]
+
+This means that the classifier predicts all reconstruction images as Non-Demented.
+
+So, even if the Vanilla reconstruction images may look visually plausible,
+from the classifier’s perspective,
+the disease-stage information is mostly not preserved.
