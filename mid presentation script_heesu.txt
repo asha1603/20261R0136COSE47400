@@ -1,0 +1,70 @@
+-----------------------------------
+Now I will explain our experiment and results.
+-----------------------------------------------------------------
+First, let me compare the structures of the two models.
+On the left is our proposed model, U-Net CVAE,
+and on the right is the baseline model, Vanilla CVAE.
+
+Vanilla CVAE uses both the image and the label map as the encoder input.
+Then, it uses the latent vector and the one-hot label in the decoder
+to reconstruct the MRI image.
+
+In contrast, U-Net CVAE only uses the image as the encoder input.
+The label information is injected at the decoder bottleneck
+through a label embedding.
+Also, U-Net CVAE uses skip connections,
+which directly pass encoder features to the decoder.
+Finally, we added classifier-guided loss to the loss function.
+This classifier loss encourages the reconstructed image
+to be classified as the correct dementia stage.
+------------------------------------------------------------------------
+Next, this is the result comparison.
+We compared MSE, PSNR, SSIM, reconstruction BCE, KL loss, and validation loss.
+Overall, U-Net CVAE achieved better performance than Vanilla CVAE.
+
+The difference is more clear when we look at the actual reconstruction results.
+-----------------------------------------------------------------------------
+First, this is the result of the baseline model, Vanilla CVAE.
+Although images are generated for the three dementia stages,
+they are generally blurry,
+and many anatomical details are lost.
+
+The confusion matrix on the right shows
+which class the classifier predicted from the reconstructed images.
+Here, 0 means Non-Demented,
+1 means Very Mild Dementia,
+and 2 means Mild Dementia.
+
+In the Vanilla CVAE confusion matrix,
+the classifier predicts most reconstruction images as Non-Demented.
+This means that Vanilla CVAE does not preserve stage-specific features well.
+-------------------------------------------------------------------------------
+Next, this is the result of U-Net CVAE.
+Compared to Vanilla CVAE,
+the reconstructed images are much sharper,
+and the brain structure is better preserved.
+
+In the confusion matrix,
+the largest values appear along the diagonal.
+The diagonal values mean that the true label
+and the classifier prediction are the same.
+Therefore, U-Net CVAE performs better than Vanilla CVAE
+not only in image quality,
+but also in dementia stage consistency.
+-------------------------------------------------------------------
+Finally, I will talk about our future implementation.
+
+As mentioned earlier,
+the current model performs same-label reconstruction.
+However, our final goal is to go beyond reconstruction
+and generate MRI images of different dementia stages
+based on a patient’s original MRI.
+
+To achieve this, we plan to work on three improvements.
+Add target-stage confidence comparison,
+Add Grad-CAM visualization,
+Implementing FiLM.
+----------------------------------
+The references are listed below.
+--------------
+Thank you.

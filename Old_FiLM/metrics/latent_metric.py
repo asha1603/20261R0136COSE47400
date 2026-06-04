@@ -1,3 +1,8 @@
+import json
+import os
+import sys
+from pathlib import Path
+
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
@@ -5,7 +10,12 @@ from tqdm import tqdm
 import torch.nn.functional as F 
 
 # === 기존 코드에서 import해야 하는 것들 ===
-from cvae_exp import (
+# Allow this file to be run directly from the metrics directory.
+OLD_FILM_DIR = Path(__file__).resolve().parents[1]
+if str(OLD_FILM_DIR) not in sys.path:
+    sys.path.insert(0, str(OLD_FILM_DIR))
+
+from cvae import (
     OASISContrastiveDataset,
     ImprovedCVAE,
     ImprovedClusteringLoss,
@@ -17,7 +27,9 @@ from cvae_exp import (
     IMAGE_CHANNEL,
     IMAGE_SIZE,
     CVAE_MODEL_PATH,
-    MARGIN
+    MARGIN,
+    DATA_DIR,
+    OUTPUT_FOLDER,
 )
 
 # ----------------------------------------------------
@@ -78,7 +90,7 @@ def compute_center_distances(cluster_loss_fn):
 if __name__ == "__main__":
 
     # ===== Validation dataset =====
-    val_dataset = OASISContrastiveDataset("data", transform=transform, split='val')
+    val_dataset = OASISContrastiveDataset(DATA_DIR, transform=transform, split='val')
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=4)
 
     # ===== Load trained CVAE =====
@@ -118,3 +130,21 @@ if __name__ == "__main__":
 
     print(f"\nAverage center distance = {avg_dist:.4f} (margin={MARGIN})")
     print("=================================================\n")
+
+    result_path = os.path.join(OUTPUT_FOLDER, "latent_metrics.json")
+    with open(result_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "intra_class_variance": {
+                    CLASSES[c]: float(v) for c, v in intra_var.items()
+                },
+                "pairwise_center_distances": {
+                    pair: float(dist) for pair, dist in dist_dict.items()
+                },
+                "average_center_distance": float(avg_dist),
+                "margin": float(MARGIN),
+            },
+            f,
+            indent=2,
+        )
+    print(f"Saved: {result_path}")

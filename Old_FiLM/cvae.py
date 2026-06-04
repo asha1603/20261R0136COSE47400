@@ -19,9 +19,29 @@ import matplotlib.pyplot as plt
 import timm  # ✅ torchvision.resnet 대신 timm 사용
 
 # --- 1. 설정 및 하이퍼파라미터 ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-DATA_DIR = 'data'
-CVAE_MODEL_PATH = "best_cvae_clustered_class_only.pth"
+DATA_DIR = os.environ.get("OLD_FILM_DATA_DIR", os.path.join(BASE_DIR, "data"))
+CHECKPOINT_DIR = os.environ.get(
+    "OLD_FILM_CHECKPOINT_DIR", os.path.join(BASE_DIR, "checkpoints")
+)
+RESULTS_DIR = os.environ.get(
+    "OLD_FILM_RESULTS_DIR", os.path.join(BASE_DIR, "evaluation_results")
+)
+CLASSIFIER_MODEL_PATH = os.environ.get(
+    "OLD_FILM_CLASSIFIER_PATH",
+    os.path.join(
+        BASE_DIR,
+        "classification_results",
+        "best_classifier_resnet18_weights_42.pth",
+    ),
+)
+CVAE_MODEL_PATH = os.environ.get(
+    "OLD_FILM_CVAE_MODEL_PATH",
+    os.path.join(CHECKPOINT_DIR, "best_cvae_clustered_class_only.pth"),
+)
+os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 IMAGE_SIZE = 224
 IMAGE_CHANNEL = 1
@@ -44,7 +64,7 @@ MARGIN = 2.0
 # Classifier-guided loss
 CLASSIFIER_LOSS_WEIGHT = 2.0
 
-OUTPUT_FOLDER = "GEN_SAMPLES"
+OUTPUT_FOLDER = os.path.join(RESULTS_DIR, "GEN_SAMPLES")
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 transform = transforms.Compose([
@@ -74,7 +94,7 @@ class SimpleClassifier(nn.Module):
 
 
 def load_classifier(
-    path="classification_results/best_classifier_resnet18_weights_42.pth",
+    path=CLASSIFIER_MODEL_PATH,
     model_name="resnet18"
 ):
     cls = SimpleClassifier(model_name=model_name, num_classes=NUM_CLASSES).to(DEVICE)
@@ -499,7 +519,7 @@ if __name__ == "__main__":
     # 🔥 timm 기반 pretrained classifier 로드
     classifier = load_classifier()
 
-    Training (필요시)
+    # Train the model and save the best checkpoint.
     clustering_loss_fn = train_improved_cvae(
         model, train_loader, val_loader,
         epochs=NUM_EPOCHS, lr=LEARNING_RATE,
@@ -523,5 +543,11 @@ if __name__ == "__main__":
     print("Generated:", gen_path)
 
     print("\nGenerating comparison...")
-    save_comparison(model, x0, orig_label, target, "comparison_sample.png")
+    save_comparison(
+        model,
+        x0,
+        orig_label,
+        target,
+        os.path.join(OUTPUT_FOLDER, "comparison_sample.png"),
+    )
     print("Saved comparison figure.")
