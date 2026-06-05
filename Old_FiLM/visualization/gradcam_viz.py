@@ -120,7 +120,7 @@ def visualize_gradcam(original_img_01, cam, pred_name, save_path):
 # ----------------------------------------------------------
 # 4) Main Runner (생성 이미지 전용)
 # ----------------------------------------------------------
-def run_gradcam_on_generated_image(gen_img_tensor, classifier_path):
+def run_gradcam_on_generated_image(gen_img_tensor, classifier_path, save_path):
 
     # load classifier
     clf = load_classifier(classifier_path)
@@ -144,24 +144,39 @@ def run_gradcam_on_generated_image(gen_img_tensor, classifier_path):
         original_img_01=gen_img_tensor.cpu(),
         cam=cam,
         pred_name=pred_name,
-        save_path=f"gradcam_generated_{pred_name}.png"
+        save_path=save_path
     )
 
 
 # ----------------------------------------------------------
 # 5) 🔥 실제 호출
 # ----------------------------------------------------------
-# CVAE에서 생성한 이미지를 gen_img 라고 가정
-# gen_img shape: [1, 224, 224]
+if __name__ == '__main__':
+    import glob
+    import os
 
-# 예)
-# gen,_,_,_ = model(x0, proto)
-# gen_img = gen.squeeze(0)
+    # 스크립트 파일 기준으로 경로 탐색
+    VIS_DIR = os.path.dirname(os.path.abspath(__file__))
+    BASE_DIR = os.path.dirname(VIS_DIR) # Old_FiLM 디렉토리
 
-# 🔥 실제 실행 코드
-gen_img = load_generated_image("GEN_SAMPLES/from_Non Demented_to_Very mild Dementia_3965.png")
+    # 생성된 실제 이미지 파일 경로 자동 검색
+    image_pattern = os.path.join(BASE_DIR, "evaluation_results", "GEN_SAMPLES", "from_*.png")
+    found_images = glob.glob(image_pattern)
 
-run_gradcam_on_generated_image(
-    gen_img_tensor = gen_img, 
-    classifier_path = "classification_results/best_classifier_resnet18_weights_42.pth"
-)
+    if not found_images:
+        print("❌ 오류: Old_FiLM/evaluation_results/GEN_SAMPLES 폴더에 이미지 파일(from_*.png)이 없습니다. CVAE 모델을 먼저 실행해주세요.")
+    else:
+        # 첫 번째 검색된 이미지 선택
+        gen_img_path = found_images[0]
+        print(f"🔍 발견된 이미지로 Grad-CAM 분석 진행: {os.path.basename(gen_img_path)}")
+        gen_img = load_generated_image(gen_img_path)
+        
+        # 저장 경로 설정 (동일 폴더 내에 gradcam_result.png 로 저장)
+        save_path = os.path.join(os.path.dirname(gen_img_path), "gradcam_result.png")
+        classifier_path = os.path.join(BASE_DIR, "classification_results", "best_classifier_resnet18_weights_42.pth")
+
+        run_gradcam_on_generated_image(
+            gen_img_tensor = gen_img, 
+            classifier_path = classifier_path,
+            save_path = save_path
+        )
