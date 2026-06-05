@@ -4,7 +4,7 @@
   warnings.warn(msg)
 Setting up [LPIPS] perceptual loss: trunk [alex], v[0.1], spatial [off]
 Loading model from: /home/elicer/.local/lib/python3.10/site-packages/lpips/weights/v0.1/alex.pth
-Loaded CVAE checkpoint (epoch 2, val_loss=1.8030)
+Loaded CVAE checkpoint (epoch 28, val_loss=2.0106)
 z_content shape: (17629, 96)
 z_class_raw shape: (17629, 32)
 Saved: /home/elicer/20261R0136COSE47400/Old_FiLM/evaluation_results/GEN_SAMPLES/pca_z_content.png
