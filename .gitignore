@@ -28,3 +28,7 @@ oasis_data/
 *.zip
 Old_FiLM/checkpoints/
 Old_FiLM/classification_results/
+oasis_data/
+*.zip
+Old_FiLM/checkpoints/
+Old_FiLM/classification_results/
