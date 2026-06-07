@@ -1,0 +1,2 @@
+Baseline Best Epoch: 49
+Baseline Best Validation Loss: 2.4412751666835097
